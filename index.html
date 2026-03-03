@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Night Sky</title>
+    <style>
+        :root {
+            --space-black: #050b1a;
+            --star-gold: #fffae6;
+            --moon-glow: rgba(255, 255, 255, 0.8);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--space-black);
+            font-family: 'Georgia', serif;
+            color: white;
+        }
+
+        /* Entry Screen */
+        #entry-screen {
+            position: fixed;
+            z-index: 100;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #050b1a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        h1 { font-weight: 300; letter-spacing: 2px; margin-bottom: 10px; }
+        p { color: #a0a0c0; margin-bottom: 30px; }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--star-gold);
+            color: var(--star-gold);
+            padding: 12px 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        button:hover {
+            background: var(--star-gold);
+            color: black;
+            box-shadow: 0 0 20px var(--star-gold);
+        }
+
+        /* Main Experience */
+        #sky-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        canvas { display: block; }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+
+        .moon {
+            position: absolute;
+            top: 10%;
+            right: 10%;
+            width: 100px;
+            height: 100px;
+            background: #fdfdfd;
+            border-radius: 50%;
+            box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+
+        /* Hidden Message Reveal */
+        #final-message {
+            position: absolute;
+            bottom: 10%;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+            opacity: 0;
+            transition: opacity 3s;
+            text-shadow: 0 0 10px white;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="entry-screen">
+        <div class="glass-card">
+            <h1>December 26, 2025</h1>
+            <p>Ready to visit the night it all started?</p>
+            <button onclick="startExperience()">Enter the Past</button>
+        </div>
+    </div>
+
+    <div id="sky-container">
+        <div id="ui-layer">
+            <p>Connect the stars to find the truth...</p>
+        </div>
+        <div class="moon"></div>
+        <canvas id="starCanvas"></canvas>
+        <div id="final-message">I LOVE YOU TO THE MOON AND BACK</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let connections = [];
+        let isDrawing = false;
+        let pointsToConnect = [];
+        
+        // Settings
+        const starCount = 400;
+        const targetText = "I LOVE YOU"; // Simplified for logic, full text in final reveal
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            createStars();
+            createMessagePoints();
+            animate();
+        }
+
+        function createStars() {
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.5,
+                    opacity: Math.random(),
+                    twinkle: Math.random() * 0.02
+                });
+            }
+        }
+
+        // Logical points for her to click (forming a rough path)
+        function createMessagePoints() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            // Highlighting a few "key" stars in a heart shape or line
+            for(let i=0; i<8; i++) {
+                pointsToConnect.push({
+                    x: centerX - 200 + (i * 60),
+                    y: centerY + Math.sin(i) * 50,
+                    reached: false
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background stars
+            stars.forEach(s => {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 250, 230, ${s.opacity})`;
+                ctx.fill();
+                s.opacity += s.twinkle;
+                if (s.opacity > 1 || s.opacity < 0.2) s.twinkle *= -1;
+            });
+
+            // Draw Target Stars
+            pointsToConnect.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = p.reached ? '#fff' : 'rgba(255,255,255,0.3)';
+                ctx.shadowBlur = p.reached ? 15 : 0;
+                ctx.shadowColor = "white";
+                ctx.fill();
+            });
+
+            // Draw Lines
+            if (connections.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(connections[0].x, connections[0].y);
+                for(let i=1; i<connections.length; i++) {
+                    ctx.lineTo(connections[i].x, connections[i].y);
+                }
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function startExperience() {
+            document.getElementById('entry-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('entry-screen').style.display = 'none';
+                document.getElementById('ui-layer').style.opacity = '1';
+            }, 1500);
+        }
+
+        // Interaction Logic
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            pointsToConnect.forEach(p => {
+                const dist = Math.hypot(p.x - mouseX, p.y - mouseY);
+                if (dist < 20 && !p.reached) {
+                    p.reached = true;
+                    connections.push({x: p.x, y: p.y});
+                    checkWin();
+                }
+            });
+        });
+
+        function checkWin() {
+            const allReached = pointsToConnect.every(p => p.reached);
+            if (allReached) {
+                document.getElementById('final-message').style.opacity = '1';
+                document.querySelector('.moon').style.boxShadow = "0 0 100px 40px rgba(255, 255, 255, 0.4)";
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        init();
+    </script>
+</body>
+</html>
